@@ -22,13 +22,13 @@ case "$BUMP" in
     ;;
 esac
 
-if [[ $(git status --porcelain) != "" ]]; then
-  echo "Error: repo is dirty. Run git status, clean repo and try again."
-  exit 1
-elif [[ $(git status --porcelain -b | grep -e "ahead" -e "behind") != "" ]]; then
-  echo "Error: repo has unpushed commits. Push commits to remote and try again."
-  exit 1
-fi  
+# if [[ $(git status --porcelain) != "" ]]; then
+#   echo "Error: repo is dirty. Run git status, clean repo and try again."
+#   exit 1
+# elif [[ $(git status --porcelain -b | grep -e "ahead" -e "behind") != "" ]]; then
+#   echo "Error: repo has unpushed commits. Push commits to remote and try again."
+#   exit 1
+# fi
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 

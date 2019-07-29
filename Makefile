@@ -140,7 +140,7 @@ _install_sembump:
 _bump_and_tag: _install_sembump
 	@echo "==> BUMP=${BUMP} bumping and tagging version"
 	@echo ""
-	@ORIGIN=$$ORIGIN scripts/bumpversion.sh
+	@ORIGIN=${ORIGIN} scripts/bumpversion.sh
 
 .PHONY: _release
 _release:
