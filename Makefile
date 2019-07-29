@@ -120,7 +120,7 @@ changelog: _install_github_release_notes
 	@changes=$(shell scripts/changelog.sh) && cat $$changes && rm -f $$changes
 
 # ORIGIN ?= origin
-ORIGIN ?= hilary
+ORIGIN ?= origin
 
 BUMP ?= patch
 
