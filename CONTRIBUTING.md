@@ -74,7 +74,7 @@ or `make help` for a list of available commands with descriptions.
 
 The minimal version of Golang for `doctl` is 1.11. `doctl` uses [Go
 modules](https://github.com/golang/go/wiki/Modules) for dependency
-management [with vendoring](https://github.com/golang/go/wiki/Modules#how-do-i-use-vendoring-with-modules-is-vendoring-going-away). 
+management [with vendoring](https://github.com/golang/go/wiki/Modules#how-do-i-use-vendoring-with-modules-is-vendoring-going-away).
 Please run `make vendor` after any dependency modifications.
 
 Be sure to run `go fmt` on your code before submitting a pull request.
@@ -89,7 +89,7 @@ Run the tests locally via `make test`, or on Travis CI by opening a PR.
 
 #### `godo` mocks
 
-When you upgrade `godo` you have to re-generate the mocks. 
+When you upgrade `godo` you have to re-generate the mocks.
 
     ```
     make mocks
@@ -126,7 +126,7 @@ and let TravisCI run shellcheck for you.
 
 1. Generate a PR, get it reviewed, and merge
 
-1. Cut a release using `BUMP=(bugfix|feature|breaking) make bump_and_release`. 
+1. Cut a release using `BUMP=(bugfix|feature|breaking) make bump_and_release`.
    `doctl` follows [semantic versioning](semver.org), ask if
    you aren't sure. `BUMP=bugfix` is an alias for `BUMP=patch`,
    `BUMP=feature` is an alias for `BUMP=minor`, and `BUMP=breaking`
@@ -136,15 +136,15 @@ and let TravisCI run shellcheck for you.
 
 `make bump_and_release` calls a series of smaller tasks under the
 hood. If the target fails, fix the problem and use the smaller tasks
-to finish the release. `make release` may be of particular interest; 
+to finish the release. `make release` may be of particular interest;
 it releases the most recent existing tag. Check `Makefile` for other
 internal targets of interest.
 
 #### Updating Homebrew
 
-Using the url and sha from the github release, update the 
+Using the url and sha from the github release, update the
 [homebrew formula](https://github.com/Homebrew/homebrew-core/blob/master/Formula/doctl.rb).
-You can use `brew bump-formula-pr doctl`, or 
+You can use `brew bump-formula-pr doctl`, or
 
 1. fork `homebrew-core`
 1. create a branch named `doctl-<version>`
