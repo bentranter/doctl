@@ -15,6 +15,10 @@ package commands
 
 import (
 	"io/ioutil"
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
 	"sort"
 	"testing"
 
@@ -123,6 +127,39 @@ var (
 
 	testSnapshotList = do.Snapshots{testSnapshot, testSnapshotSecondary}
 )
+
+const packagePath string = "github.com/digitalocean/doctl/cmd/doctl"
+
+var builtBinaryPath string
+
+func TestMain(m *testing.M) {
+	tmpDir := setup()
+	code := m.Run()
+	teardown(tmpDir)
+	os.Exit(code)
+}
+
+func setup() string {
+	tmpDir, err := ioutil.TempDir("", "acceptance-doctl")
+	if err != nil {
+		panic("failed to create temp dir")
+	}
+	builtBinaryPath = filepath.Join(tmpDir, path.Base(packagePath))
+
+	cmd := exec.Command("go", "build", "-o", builtBinaryPath, packagePath)
+	err = cmd.Run()
+	if err != nil {
+		panic("failed to build doctl")
+	}
+
+	return tmpDir
+}
+
+func teardown(tmpDir string) {
+	if err := os.RemoveAll(tmpDir); err != nil {
+		panic("failed to cleanup the doctl acceptance artifacts")
+	}
+}
 
 func assertCommandNames(t *testing.T, cmd *Command, expected ...string) {
 	var names []string
