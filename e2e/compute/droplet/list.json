@@ -1,0 +1,147 @@
+{
+  "droplets":[
+    {
+      "id":24348201,
+      "name":"bentranter.io",
+      "memory":1024,
+      "vcpus":1,
+      "disk":20,
+      "locked":false,
+      "status":"active",
+      "kernel":{
+        "id":7515,
+        "name":"DigitalOcean GrubLoader v0.2 (20160714)",
+        "version":"2016.07.13-DigitalOcean_loader_Ubuntu"
+      },
+      "created_at":"2016-08-31T23:46:04Z",
+      "features":[
+        "virtio"
+      ],
+      "backup_ids":[
+
+      ],
+      "next_backup_window":null,
+      "snapshot_ids":[
+
+      ],
+      "image":{
+        "id":17493934,
+        "name":"Ghost 0.8.0 on 14.04",
+        "distribution":"Ubuntu",
+        "slug":null,
+        "public":false,
+        "regions":[
+
+        ],
+        "created_at":"2016-05-23T20:12:42Z",
+        "min_disk_size":20,
+        "type":"snapshot",
+        "size_gigabytes":0.61,
+        "tags":[
+
+        ],
+        "status":"retired"
+      },
+      "volume_ids":[
+
+      ],
+      "size":{
+        "slug":"s-1vcpu-1gb",
+        "memory":1024,
+        "vcpus":1,
+        "disk":25,
+        "transfer":1.0,
+        "price_monthly":5.0,
+        "price_hourly":0.00744,
+        "regions":[
+          "ams2",
+          "ams3",
+          "blr1",
+          "fra1",
+          "lon1",
+          "nyc1",
+          "nyc2",
+          "nyc3",
+          "sfo1",
+          "sfo2",
+          "sgp1",
+          "tor1"
+        ],
+        "available":true
+      },
+      "size_slug":"s-1vcpu-1gb",
+      "networks":{
+        "v4":[
+          {
+            "ip_address":"159.203.57.85",
+            "netmask":"255.255.248.0",
+            "gateway":"159.203.56.1",
+            "type":"public"
+          }
+        ],
+        "v6":[
+
+        ]
+      },
+      "region":{
+        "name":"Toronto 1",
+        "slug":"tor1",
+        "features":[
+          "private_networking",
+          "backups",
+          "ipv6",
+          "metadata",
+          "install_agent",
+          "storage",
+          "image_transfer"
+        ],
+        "available":true,
+        "sizes":[
+          "512mb",
+          "s-1vcpu-1gb",
+          "1gb",
+          "s-1vcpu-2gb",
+          "s-1vcpu-3gb",
+          "s-3vcpu-1gb",
+          "s-2vcpu-2gb",
+          "s-2vcpu-4gb",
+          "2gb",
+          "4gb",
+          "c-2",
+          "m-1vcpu-8gb",
+          "s-4vcpu-8gb",
+          "m-16gb",
+          "s-6vcpu-16gb",
+          "c-4",
+          "8gb",
+          "m-32gb",
+          "s-8vcpu-32gb",
+          "c-8",
+          "16gb",
+          "s-12vcpu-48gb",
+          "m-64gb",
+          "32gb",
+          "c-16",
+          "s-16vcpu-64gb",
+          "s-20vcpu-96gb",
+          "48gb",
+          "m-128gb",
+          "64gb",
+          "c-32",
+          "s-24vcpu-128gb",
+          "s-32vcpu-192gb",
+          "m-224gb"
+        ]
+      },
+      "tags":[
+
+      ]
+    }
+  ],
+  "links":{
+
+  },
+  "meta":{
+    "total":1
+  }
+}
