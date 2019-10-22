@@ -1,11 +1,16 @@
 package integration
 
 import (
+	"bytes"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -13,7 +18,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ = suite("compute/droplet/list", func(t *testing.T, when spec.G, it spec.S) {
+func randomCoveragePath() string {
+	buf := make([]byte, 6)
+	if _, err := rand.Read(buf); err != nil {
+		panic(err)
+	}
+	return filepath.Join(os.Getenv("GOPATH"), "src", "github.com", "digitalocean",
+		"doctl", "coverage", hex.EncodeToString(buf)+".out")
+}
+
+var _ = suite.Focus("compute/droplet/list", func(t *testing.T, when spec.G, it spec.S) {
 	var (
 		expect *require.Assertions
 		server *httptest.Server
@@ -57,26 +71,29 @@ var _ = suite("compute/droplet/list", func(t *testing.T, when spec.G, it spec.S)
 
 	when("all required flags are passed", func() {
 		it("lists droplets", func() {
-			cmd := exec.Command(builtBinaryPath,
+			cmd := exec.Command(builtBinaryPath, "-test.coverprofile="+randomCoveragePath(),
+				"compute",
 				"-t", "some-magic-token",
 				"-u", server.URL,
-				"compute",
 				"droplet",
 				"list",
 			)
 
 			output, err := cmd.CombinedOutput()
 			expect.NoError(err, fmt.Sprintf("received error output: %s", output))
+			if index := bytes.Index(output, []byte("\nPASS\n")); index != -1 {
+				output = output[:index]
+			}
 			expect.Equal(strings.TrimSpace(dropletListOutput), strings.TrimSpace(string(output)))
 		})
 	})
 
 	when("a region is provided", func() {
 		it("filters the returned droplets by region", func() {
-			cmd := exec.Command(builtBinaryPath,
+			cmd := exec.Command(builtBinaryPath, "-test.coverprofile="+randomCoveragePath(),
+				"compute",
 				"-t", "some-magic-token",
 				"-u", server.URL,
-				"compute",
 				"droplet",
 				"list",
 				"--tag-name", "regions",
@@ -85,16 +102,19 @@ var _ = suite("compute/droplet/list", func(t *testing.T, when spec.G, it spec.S)
 
 			output, err := cmd.CombinedOutput()
 			expect.NoError(err, fmt.Sprintf("received error output: %s", output))
+			if index := bytes.Index(output, []byte("\nPASS\n")); index != -1 {
+				output = output[:index]
+			}
 			expect.Equal(strings.TrimSpace(dropletListRegionOutput), strings.TrimSpace(string(output)))
 		})
 	})
 
 	when("there are no droplets", func() {
 		it("lists only headers", func() {
-			cmd := exec.Command(builtBinaryPath,
+			cmd := exec.Command(builtBinaryPath, "-test.coverprofile="+randomCoveragePath(),
+				"compute",
 				"-t", "some-magic-token",
 				"-u", server.URL,
-				"compute",
 				"droplet",
 				"list",
 				"--tag-name", "some-tag",
@@ -102,6 +122,9 @@ var _ = suite("compute/droplet/list", func(t *testing.T, when spec.G, it spec.S)
 
 			output, err := cmd.CombinedOutput()
 			expect.NoError(err, fmt.Sprintf("received error output: %s", output))
+			if index := bytes.Index(output, []byte("\nPASS\n")); index != -1 {
+				output = output[:index]
+			}
 			expect.Equal(strings.TrimSpace(dropletListEmptyOutput), strings.TrimSpace(string(output)))
 		})
 	})

@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -38,7 +39,9 @@ func TestMain(m *testing.M) {
 	}
 
 	// tried to use -mod=vendor but it blew up
-	cmd := exec.Command("go", "build", "-o", builtBinaryPath, packagePath)
+	cmd := exec.Command("go", "test", "-coverpkg=\"github.com/digitalocean/doctl\"",
+		"github.com/digitalocean/doctl/cmd/doctl", "-c", "-vet", "off", "-tags", "testrunmain", "-o", builtBinaryPath)
+	log.Println(builtBinaryPath)
 	cmd.Env = append(os.Environ(), "CGO_ENABLED=0")
 	output, err := cmd.CombinedOutput()
 	if err != nil {

@@ -192,3 +192,12 @@ docs:
 	@echo ""
 	@mkdir -p ${DOCS_OUT}
 	@DOCS_OUT=${DOCS_OUT} go run scripts/gen-yaml-docs.go
+
+.PHONY: build-test-bin
+build-test-bin:
+	go test -coverpkg="github.com/digitalocean/doctl" github.com/digitalocean/doctl/cmd/doctl -c -vet off -tags testrunmain
+
+measure-integration:
+	mkdir -p coverage
+	go test ./integration
+	echo "It doesn't work"
