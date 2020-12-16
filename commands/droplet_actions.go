@@ -295,8 +295,8 @@ func RunDropletActionPowerOff(c *CmdConfig) error {
 		if err != nil {
 			return nil, err
 		}
-		id, err := contextualAtoi(c.Args[0], dropletIDResource)
 
+		id, err := contextualAtoi(c.Args[0], dropletIDResource)
 		if err != nil {
 			return nil, err
 		}
@@ -557,7 +557,6 @@ func contextualAtoi(s, resource string) (int, error) {
 	}
 	if _, ok := err.(*strconv.NumError); ok {
 		return 0, fmt.Errorf(`expected %s to be a postive integer, got "%s"`, resource, s)
-	} else {
-		return 0, err
 	}
+	return 0, err
 }

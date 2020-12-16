@@ -124,6 +124,13 @@ func TestDropletActionsPowerOff(t *testing.T) {
 		err := RunDropletActionPowerOff(config)
 		assert.NoError(t, err)
 	})
+
+	withTestClient(t, func(config *CmdConfig, tm *tcMocks) {
+		config.Args = append(config.Args, "my-test-id")
+
+		err := RunDropletActionPowerOff(config)
+		assert.EqualError(t, err, `expected <droplet-id> to be a postive integer, got "my-test-id"`)
+	})
 }
 func TestDropletActionsPowerOn(t *testing.T) {
 	withTestClient(t, func(config *CmdConfig, tm *tcMocks) {
