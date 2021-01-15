@@ -17,6 +17,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -26,7 +28,9 @@ import (
 	"github.com/digitalocean/doctl"
 
 	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/oauth2"
 
+	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	yaml "gopkg.in/yaml.v2"
@@ -104,6 +108,8 @@ To create new contexts, see the help for `+"`"+`doctl auth init`+"`"+`.`, Writer
 	// format flag, so we include here despite only supporting text output for
 	// this command.
 	AddStringFlag(cmdAuthList, doctl.ArgFormat, "", "", "Columns for output in a comma-separated list. Possible values: `text`")
+
+	cmdBuilderWithInit(cmd, RunAuthOAuth2, "token", "Opens a web browser to get a new API token.", `Me no know`, Writer, false)
 
 	return cmd
 }
@@ -195,6 +201,88 @@ func RunAuthSwitch(c *CmdConfig) error {
 
 	fmt.Printf("Now using context [%s] by default\n", context)
 	return writeConfig()
+}
+
+// RunAuthOAuth2 tries some dumb stuff to get an API token.
+func RunAuthOAuth2(c *CmdConfig) error {
+	done := make(chan struct{})
+
+	cfg := &oauth2.Config{
+		ClientID:     os.Getenv("DIGITALOCEAN_KEY"),
+		ClientSecret: os.Getenv("DIGITALOCEAN_SECRET"),
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  "https://cloud.digitalocean.com/v1/oauth/authorize",
+			TokenURL: "https://cloud.digitalocean.com/v1/oauth/token",
+		},
+		RedirectURL: "http://localhost:3000/auth/digitalocean/callback",
+	}
+
+	// Create an HTTP handler to deal with the OAuth2 callback.
+	mux := http.NewServeMux()
+	mux.HandleFunc("/auth/digitalocean/callback", func(w http.ResponseWriter, r *http.Request) {
+		code := r.URL.Query().Get("code")
+
+		token, err := cfg.Exchange(r.Context(), code)
+		if err != nil {
+			// TODO Send on an error channel instead of crashing.
+			log.Fatalf("%+v exchanging token", err)
+		}
+
+		// Start – stuff stolen from RunAuthInit
+		c.setContextAccessToken(string(token.AccessToken))
+
+		fmt.Fprintln(c.Out)
+		fmt.Fprint(c.Out, "Validating token... ")
+
+		// need to initial the godo client since we've changed the configuration.
+		if err := c.initServices(c); err != nil {
+			log.Fatalf("Unable to initialize DigitalOcean API client with new token: %s", err)
+		}
+
+		if _, err := c.Account().Get(); err != nil {
+			fmt.Fprintln(c.Out, "invalid token")
+			fmt.Fprintln(c.Out)
+			log.Fatalf("Unable to use supplied token to access API: %s", err)
+		}
+
+		fmt.Fprintln(c.Out, "OK")
+		fmt.Fprintln(c.Out)
+
+		if err := writeConfig(); err != nil {
+			log.Fatalf("%+v writing config", err)
+		}
+		// End – stuff stolen from RunAuthInit
+
+		done <- struct{}{}
+
+		w.Write([]byte("Success! You can close your browser window and return to the CLI"))
+	})
+
+	// Setup and start OAuth server.
+	srv := &http.Server{
+		// Hardcoded for now, but you can setup the net.Listener yourself to
+		// get a free, available port from the OS.
+		Addr:    ":3000",
+		Handler: mux,
+	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			// TODO Send on an error channel instead of crashing.
+			log.Fatalf("%+v starting server", err)
+		}
+	}()
+
+	// Redirect the user to the OAuth consent page.
+	//
+	// TODO Set state!
+	open.Run(cfg.AuthCodeURL(""))
+
+	fmt.Fprintln(c.Out, "Waiting for authentication to finish in the browser...")
+	<-done
+
+	// TODO Shut down the server or don't cause who cares.
+	return nil
 }
 
 func writeConfig() error {

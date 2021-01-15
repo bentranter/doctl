@@ -144,6 +144,9 @@ github.com/shiena/ansicolor
 # github.com/sirupsen/logrus v1.7.0
 ## explicit
 github.com/sirupsen/logrus
+# github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
+## explicit
+github.com/skratchdot/open-golang/open
 # github.com/spf13/afero v1.2.2
 github.com/spf13/afero
 github.com/spf13/afero/mem
