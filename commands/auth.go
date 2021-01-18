@@ -14,6 +14,9 @@ limitations under the License.
 package commands
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -207,29 +210,96 @@ func RunAuthSwitch(c *CmdConfig) error {
 func RunAuthOAuth2(c *CmdConfig) error {
 	done := make(chan struct{})
 
+	// Create a random state value.
+	buf := make([]byte, 16)
+	if _, err := rand.Read(buf); err != nil {
+		panic(err)
+	}
+	state := hex.EncodeToString(buf)
+
+	// A client secret is not required when using the implicit grant flow.
+	//
+	// See https://tools.ietf.org/html/rfc6749#section-1.3.2.
 	cfg := &oauth2.Config{
-		ClientID:     os.Getenv("DIGITALOCEAN_KEY"),
-		ClientSecret: os.Getenv("DIGITALOCEAN_SECRET"),
+		ClientID: "1ca04d6e6153c0447056239ffc2f8344c880b3b3e2b65898b72887aeb8c1c7fe",
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://cloud.digitalocean.com/v1/oauth/authorize",
 			TokenURL: "https://cloud.digitalocean.com/v1/oauth/token",
 		},
 		RedirectURL: "http://localhost:3000/auth/digitalocean/callback",
+		// TODO Consider accepting a list of scopes via the CLI.
+		Scopes: []string{"read", "write"},
 	}
 
 	// Create an HTTP handler to deal with the OAuth2 callback.
 	mux := http.NewServeMux()
 	mux.HandleFunc("/auth/digitalocean/callback", func(w http.ResponseWriter, r *http.Request) {
-		code := r.URL.Query().Get("code")
+		// Because we used the implicit grant flow, we'll need to serve the
+		// page with this handler for the GET request, and handle the page
+		// sending us back the token for the POST request.
+		var token string
 
-		token, err := cfg.Exchange(r.Context(), code)
-		if err != nil {
-			// TODO Send on an error channel instead of crashing.
-			log.Fatalf("%+v exchanging token", err)
+		switch r.Method {
+		case http.MethodGet:
+			// Serve some barebones HTML here.
+			w.Write([]byte(`<!DOCTYPE html>
+<html>
+<head>
+  <title>doctl | New API Token</title>
+  <style>html, body { font-family: Helvetica, sans-serif; margin: 2rem; font-size: 16px }</style>
+</head>
+<body>
+  <h1>New token created successfully</h1>
+  <p>Waiting to save the token in the CLI...</p>
+  <script>
+    (function() {
+      const fragment = window.location.hash
+      // The URL will always begin with the fragment, and because we know that
+      // it's called #access_token=, we know those characters are 14 long, so
+      // just chop those off to get the raw token.
+      const token = fragment.substring(14).split("&")[0]
+
+      // Send a POST request to get the server to save the token.
+      fetch("http://localhost:3000/auth/digitalocean/callback", {
+        method: "post",
+        body: JSON.stringify({token: token})
+      }).then(function(response) {
+        if (response.status === 204) {
+          document.querySelector("p").innerText = "You can close your browser window, and return to the doctl CLI."
+        }
+      })
+    })()
+  </script>
+</body>
+</html>
+`))
+			return
+
+		case http.MethodPost:
+			// Handle the POST requets for the new token.
+			v := &struct {
+				Token string `json:"token"`
+			}{}
+			if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+				// TODO JSON specific error.
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			token = v.Token
+
+			// Respond with No Content to indicate succcess.
+			w.WriteHeader(http.StatusNoContent)
+
+			// TODO Move token saving logic here so that control flow isn't
+			// so bizarre.
+
+		default:
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		}
 
 		// Start – stuff stolen from RunAuthInit
-		c.setContextAccessToken(string(token.AccessToken))
+		c.setContextAccessToken(token)
 
 		fmt.Fprintln(c.Out)
 		fmt.Fprint(c.Out, "Validating token... ")
@@ -260,8 +330,12 @@ func RunAuthOAuth2(c *CmdConfig) error {
 
 	// Setup and start OAuth server.
 	srv := &http.Server{
-		// Hardcoded for now, but you can setup the net.Listener yourself to
-		// get a free, available port from the OS.
+		// Because the port is part of the URL that is registered with
+		// DigitalOcean, we have to hardcode a port.
+		//
+		// TODO Think of a way to choose a port that is more likely free, and
+		// check for that port's availability before opening the browser
+		// window and everything.
 		Addr:    ":3000",
 		Handler: mux,
 	}
@@ -274,15 +348,12 @@ func RunAuthOAuth2(c *CmdConfig) error {
 	}()
 
 	// Redirect the user to the OAuth consent page.
-	//
-	// TODO Set state!
-	open.Run(cfg.AuthCodeURL(""))
+	open.Run(cfg.AuthCodeURL(state, oauth2.SetAuthURLParam("response_type", "token")))
 
 	fmt.Fprintln(c.Out, "Waiting for authentication to finish in the browser...")
 	<-done
 
-	// TODO Shut down the server or don't cause who cares.
-	return nil
+	return srv.Close()
 }
 
 func writeConfig() error {
